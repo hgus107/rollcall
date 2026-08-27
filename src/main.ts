@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
-import { renameButtonLabel, summaryLabel } from "./presentation.ts";
+import { renameButtonLabel } from "./presentation.ts";
 import { duplicateTitle, sortByName, type SortColumn, type SortDirection } from "./queue-presentation.ts";
 import { adjacentPath, pathsInRange } from "./queue-selection.ts";
 import { buildRenameRules, type RenameRules } from "./rule-builder.ts";
@@ -69,7 +69,6 @@ const functionPanels = new Map<string, HTMLElement>([
 ]);
 const rowsBody = element<HTMLTableSectionElement>("rows");
 const emptyState = element<HTMLDivElement>("empty");
-const summary = element<HTMLElement>("summary");
 const ruleError = element<HTMLElement>("rule-error");
 const dropZone = element<HTMLElement>("drop");
 const chooseFilesButton = element<HTMLButtonElement>("choose-files");
@@ -249,7 +248,8 @@ function renderRows(): void {
       proposed.className = "filename-cell proposed-name";
       proposed.textContent = "";
       const state = document.createElement("td");
-      row.append(original, arrow, proposed, state);
+      const remove = createRowRemoveButton(file.path, file.name);
+      row.append(original, arrow, proposed, state, remove);
       fragment.append(row);
     }
     rowsBody.append(fragment);
@@ -283,7 +283,8 @@ function renderRows(): void {
     pill.textContent = statusLabel(item);
     pill.title = item.message;
     state.append(pill);
-    row.append(original, arrow, proposed, state);
+    const remove = createRowRemoveButton(item.source, item.originalName);
+    row.append(original, arrow, proposed, state, remove);
     fragment.append(row);
   }
   rowsBody.append(fragment);
@@ -291,8 +292,6 @@ function renderRows(): void {
 
 function renderControls(): void {
   const changed = preview?.changed ?? 0;
-  const problemCount = (preview?.conflicts ?? 0) + (preview?.invalid ?? 0);
-
   clearButton.disabled = busy || files.length === 0;
   removeSelectedButton.disabled = busy || selectedPaths.size === 0;
   removeSelectedButton.textContent = `Remove Selected (${selectedPaths.size.toLocaleString()})`;
@@ -304,7 +303,6 @@ function renderControls(): void {
   chooseFolderButton.disabled = busy || pickerOpen || !isTauri;
   for (const control of ruleControls) control.disabled = busy;
 
-  summary.textContent = summaryLabel(files.length, changed, problemCount);
 }
 
 function render(): void {
@@ -335,6 +333,31 @@ function removeSelected(): void {
   selectionFocus = null;
   importedFolders.clear();
   void refreshPreview();
+}
+
+function removePath(path: string): void {
+  if (busy) return;
+  files = files.filter((file) => file.path !== path);
+  selectedPaths.delete(path);
+  if (selectionAnchor === path) selectionAnchor = null;
+  if (selectionFocus === path) selectionFocus = null;
+  importedFolders.clear();
+  void refreshPreview();
+}
+
+function createRowRemoveButton(path: string, name: string): HTMLTableCellElement {
+  const cell = document.createElement("td");
+  cell.className = "remove-cell";
+  const button = document.createElement("button");
+  button.className = "row-remove-button";
+  button.type = "button";
+  button.textContent = "×";
+  button.dataset.removePath = path;
+  button.setAttribute("aria-label", `Remove ${name} From Queue`);
+  button.title = `Remove ${name}`;
+  button.disabled = busy;
+  cell.append(button);
+  return cell;
 }
 
 async function refreshPreview(): Promise<void> {
@@ -395,7 +418,10 @@ function collectionNotice(result: CollectedFiles, added: number, duplicateCount 
     notes.push(`${result.skippedHidden} Hidden Item${result.skippedHidden === 1 ? " Was" : "s Were"} Skipped.`);
   }
   if (added === 0 && notes.length === 0) notes.push("No New Files Were Found In That Selection.");
-  if (notes.length > 0) showNotice(added > 0 ? "Files Added With Notes" : "Nothing Added", notes.join(" "));
+  if (notes.length > 0) {
+    const addedTitle = `${added.toLocaleString()} File${added === 1 ? "" : "s"} Added To Queue`;
+    showNotice(added > 0 ? addedTitle : "Nothing Added", notes.join(" "));
+  }
 }
 
 async function addPaths(paths: string[], directory = false): Promise<void> {
@@ -502,6 +528,7 @@ for (const button of sortButtons) {
 }
 
 rowsBody.addEventListener("pointerdown", (event) => {
+  if ((event.target as HTMLElement).closest("button")) return;
   const row = (event.target as HTMLElement).closest<HTMLTableRowElement>("tr[data-path]");
   const path = row?.dataset.path;
   if (!path || event.button !== 0) return;
@@ -524,6 +551,12 @@ rowsBody.addEventListener("pointerdown", (event) => {
     draggingRows = true;
   }
   render();
+});
+
+rowsBody.addEventListener("click", (event) => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-remove-path]");
+  if (!button?.dataset.removePath) return;
+  removePath(button.dataset.removePath);
 });
 
 rowsBody.addEventListener("pointerover", (event) => {

@@ -591,15 +591,19 @@ table {
 
 .col-original,
 .col-new {
-  width: 40%;
+  width: 35%;
 }
 
 .col-arrow {
-  width: 5%;
+  width: 4%;
 }
 
 .col-status {
-  width: 15%;
+  width: 16%;
+}
+
+.col-remove {
+  width: 10%;
 }
 
 thead {
@@ -735,6 +739,35 @@ tbody tr[data-path] {
   background: var(--amber-soft);
 }
 
+.remove-cell {
+  text-align: center;
+}
+
+.row-remove-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #73746e;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.row-remove-button:hover:not(:disabled),
+.row-remove-button:focus-visible {
+  border-color: #e4c4c4;
+  color: var(--red);
+  background: var(--red-soft);
+}
+
+.row-remove-button:disabled {
+  cursor: default;
+  opacity: 0.44;
+}
+
 .empty-state {
   position: absolute;
   inset: 40px 0 0;
@@ -766,27 +799,18 @@ tbody tr[data-path] {
   justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
-  min-height: 76px;
+  min-height: 46px;
   margin: 0 -30px;
-  padding: 14px 30px;
+  padding: 4px 30px;
   border-top: 1px solid #d8dde5;
   background: #ffffff;
 }
 
-.action-bar > div {
-  display: grid;
-  gap: 4px;
-}
-
 .footer-actions {
+  margin-left: auto;
   display: flex !important;
   align-items: center;
   gap: 9px !important;
-}
-
-#summary {
-  color: #484944;
-  font-size: 14px;
 }
 
 .rule-error {

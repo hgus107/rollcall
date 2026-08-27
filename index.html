@@ -177,6 +177,7 @@
                 <col class="col-arrow" />
                 <col class="col-new" />
                 <col class="col-status" />
+                <col class="col-remove" />
               </colgroup>
               <thead>
                 <tr>
@@ -192,6 +193,7 @@
                     </button>
                   </th>
                   <th>Status</th>
+                  <th>Remove</th>
                 </tr>
               </thead>
               <tbody id="rows"></tbody>
@@ -204,10 +206,7 @@
           </section>
 
           <footer class="action-bar">
-            <div>
-              <strong id="summary">No Files Selected</strong>
-              <span id="rule-error" class="rule-error" role="alert"></span>
-            </div>
+            <span id="rule-error" class="rule-error" role="alert"></span>
             <div class="footer-actions">
               <button id="remove-selected" class="button secondary" type="button" disabled>Remove Selected (0)</button>
               <button id="clear" class="button secondary" type="button" disabled>Clear</button>
