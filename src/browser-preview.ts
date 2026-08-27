@@ -59,6 +59,12 @@ function validateFilename(name: string): string | null {
 }
 
 function formattedDate(file: BrowserFileEntry, rules: RenameRules): string {
+  if (rules.dateSource === "custom") {
+    const [year, month, day] = rules.customDate.split("-");
+    if (rules.dateFormat === "mm-dd-yyyy") return `${month}-${day}-${year}`;
+    if (rules.dateFormat === "dd-mm-yyyy") return `${day}-${month}-${year}`;
+    return `${year}-${month}-${day}`;
+  }
   const date = rules.dateSource === "modified" && file.modifiedMs !== undefined ? new Date(file.modifiedMs) : new Date();
   const year = String(date.getFullYear()).padStart(4, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");

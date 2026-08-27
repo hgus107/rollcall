@@ -16,6 +16,7 @@ const baseInputs = {
   datePosition: "beginning",
   dateSource: "today",
   dateFormat: "yyyy-mm-dd",
+  customDate: "",
 };
 
 test("positive: browser file selection previews Add Text and preserves extensions", () => {
@@ -107,6 +108,17 @@ test("edge: regex captures, case changes, numbering, and invalid regex are handl
     buildRenameRules("add-date", { ...baseInputs, dateSource: "modified", dateFormat: "mm-dd-yyyy" }),
   );
   assert.equal(dated.items[0].proposedName, "08-27-2026-image.png");
+
+  const customDated = previewBrowserRename(
+    [{ path: "image.png", name: "image.png" }],
+    buildRenameRules("add-date", {
+      ...baseInputs,
+      dateSource: "custom",
+      customDate: "2026-12-31",
+      dateFormat: "dd-mm-yyyy",
+    }),
+  );
+  assert.equal(customDated.items[0].proposedName, "31-12-2026-image.png");
 
   assert.throws(
     () =>

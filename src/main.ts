@@ -60,6 +60,8 @@ const numberPositionInput = element<HTMLSelectElement>("number-position");
 const datePositionInput = element<HTMLSelectElement>("date-position");
 const dateSourceInput = element<HTMLSelectElement>("date-source");
 const dateFormatInput = element<HTMLSelectElement>("date-format");
+const customDateField = element<HTMLElement>("custom-date-field");
+const customDateInput = element<HTMLInputElement>("custom-date");
 const functionPanels = new Map<string, HTMLElement>([
   ["add-text", element<HTMLElement>("add-text-settings")],
   ["replace-text", element<HTMLElement>("replace-text-settings")],
@@ -106,6 +108,7 @@ const ruleControls: Array<HTMLInputElement | HTMLSelectElement> = [
   datePositionInput,
   dateSourceInput,
   dateFormatInput,
+  customDateInput,
 ];
 
 let files: FileEntry[] = [];
@@ -145,6 +148,7 @@ function currentRules(): RenameRules {
     datePosition: datePositionInput.value,
     dateSource: dateSourceInput.value,
     dateFormat: dateFormatInput.value,
+    customDate: customDateInput.value,
   });
 }
 
@@ -159,7 +163,10 @@ function hasCompleteRule(): boolean {
     case "add-numbers":
       return numberPositionInput.value !== "";
     case "add-date":
-      return datePositionInput.value !== "" && dateSourceInput.value !== "" && dateFormatInput.value !== "";
+      return datePositionInput.value !== ""
+        && dateSourceInput.value !== ""
+        && dateFormatInput.value !== ""
+        && (dateSourceInput.value !== "custom" || customDateInput.value !== "");
     default:
       return false;
   }
@@ -169,6 +176,10 @@ function syncFunctionPanel(): void {
   for (const [name, panel] of functionPanels) {
     panel.hidden = name !== renameFunctionSelect.value;
   }
+}
+
+function syncCustomDateField(): void {
+  customDateField.hidden = dateSourceInput.value !== "custom";
 }
 
 function syncBackdrop(): void {
@@ -609,6 +620,7 @@ renameFunctionSelect.addEventListener("change", () => {
   syncFunctionPanel();
   schedulePreview();
 });
+dateSourceInput.addEventListener("change", syncCustomDateField);
 
 chooseFilesButton.addEventListener("click", () => void choosePaths(false));
 chooseFolderButton.addEventListener("click", () => void choosePaths(true));
@@ -683,4 +695,5 @@ if (!isTauri) {
 }
 
 syncFunctionPanel();
+syncCustomDateField();
 render();

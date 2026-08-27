@@ -1,4 +1,4 @@
-# Rollcall 0.1.0 Release Audit
+# Rollcall 0.1.1 Release Audit
 
 Audit date: 2026-08-27
 
@@ -60,7 +60,7 @@ Audit date: 2026-08-27
 10. Added a restrictive production Content Security Policy.
 11. Removed obsolete overlapping backend behavior so Save As is the only write operation.
 12. Added a reproducible macOS app and DMG packaging script with verification and optional Developer ID notarization.
-13. Replaced the outdated README with the tested Rollcall 0.1.0 behavior and Kiln-style repository flow.
+13. Replaced the outdated README with the tested Rollcall behavior and Kiln-style repository flow.
 14. Added the Rollcall tab and deep link to the existing Kiln GitHub Pages website.
 15. Reduced the macOS menu bar to Rollcall → About Rollcall / Quit Rollcall and View → Toggle Full Screen, matching Kiln exactly.
 
@@ -76,4 +76,4 @@ ROLLCALL_NOTARY_PROFILE="RollcallNotary" \
 npm run package:mac
 ```
 
-Latest notarization submission: `45cecb36-78c3-49f7-94ca-5065db40a074` (Accepted, August 27, 2026).
+Latest notarization submission: `433b48be-00d4-4159-a63f-5983e2b6858f` (Accepted, August 27, 2026).

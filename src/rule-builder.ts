@@ -10,6 +10,7 @@ export type RenameRules = {
   counterPadding: number;
   dateSource: string;
   dateFormat: string;
+  customDate: string;
 };
 
 export type RuleInputs = {
@@ -25,11 +26,22 @@ export type RuleInputs = {
   datePosition: string;
   dateSource: string;
   dateFormat: string;
+  customDate: string;
 };
 
 function clampedInteger(value: number, fallback: number, minimum: number, maximum: number): number {
   if (!Number.isFinite(value)) return fallback;
   return Math.max(minimum, Math.min(Math.trunc(value), maximum));
+}
+
+function validIsoDate(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 
 export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): RenameRules {
@@ -48,6 +60,7 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         counterPadding,
         dateSource: "today",
         dateFormat: "yyyy-mm-dd",
+        customDate: "",
       };
     case "replace-text":
       return {
@@ -60,6 +73,7 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         counterPadding,
         dateSource: "today",
         dateFormat: "yyyy-mm-dd",
+        customDate: "",
       };
     case "change-case":
       return {
@@ -72,6 +86,7 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         counterPadding,
         dateSource: "today",
         dateFormat: "yyyy-mm-dd",
+        customDate: "",
       };
     case "add-numbers":
       if (!["beginning", "end"].includes(inputs.numberPosition)) throw new Error("Select A Number Position.");
@@ -85,10 +100,14 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         counterPadding,
         dateSource: "today",
         dateFormat: "yyyy-mm-dd",
+        customDate: "",
       };
     case "add-date":
       if (!["beginning", "end"].includes(inputs.datePosition)) throw new Error("Select A Date Position.");
-      if (!["today", "modified"].includes(inputs.dateSource)) throw new Error("Select A Date Source.");
+      if (!["today", "modified", "custom"].includes(inputs.dateSource)) throw new Error("Select A Date Source.");
+      if (inputs.dateSource === "custom" && !validIsoDate(inputs.customDate)) {
+        throw new Error("Select A Custom Date.");
+      }
       if (!["yyyy-mm-dd", "mm-dd-yyyy", "dd-mm-yyyy"].includes(inputs.dateFormat)) {
         throw new Error("Select A Date Format.");
       }
@@ -102,6 +121,7 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         counterPadding,
         dateSource: inputs.dateSource,
         dateFormat: inputs.dateFormat,
+        customDate: inputs.dateSource === "custom" ? inputs.customDate : "",
       };
     default:
       throw new Error("Choose A Supported Rename Function.");

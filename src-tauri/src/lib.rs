@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, NaiveDate};
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -11,6 +11,47 @@ use std::time::UNIX_EPOCH;
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use unicode_normalization::UnicodeNormalization;
 use walkdir::WalkDir;
+
+#[cfg(target_os = "macos")]
+fn is_command_a(key_code: u16, modifier_flags: usize) -> bool {
+    const COMMAND_FLAG: usize = 1 << 20;
+    key_code == 0 && modifier_flags & COMMAND_FLAG != 0
+}
+
+#[cfg(target_os = "macos")]
+fn install_open_panel_select_all() {
+    use block2::RcBlock;
+    use objc2::runtime::NSObjectProtocol;
+    use objc2::{sel, ClassType, MainThreadMarker};
+    use objc2_app_kit::{NSApplication, NSEvent, NSEventMask, NSOpenPanel};
+    use std::ptr::NonNull;
+
+    let handler = RcBlock::new(|event: NonNull<NSEvent>| -> *mut NSEvent {
+        let event_ref = unsafe { event.as_ref() };
+        let command_a = is_command_a(event_ref.keyCode(), event_ref.modifierFlags().bits());
+        if command_a {
+            if let Some(marker) = MainThreadMarker::new() {
+                let app = NSApplication::sharedApplication(marker);
+                let open_panel_active = app
+                    .keyWindow()
+                    .is_some_and(|window| window.isKindOfClass(NSOpenPanel::class()));
+                if open_panel_active
+                    && unsafe { app.sendAction_to_from(sel!(selectAll:), None, None) }
+                {
+                    return std::ptr::null_mut();
+                }
+            }
+        }
+        event.as_ptr()
+    });
+
+    let monitor = unsafe {
+        NSEvent::addLocalMonitorForEventsMatchingMask_handler(NSEventMask::KeyDown, &handler)
+    };
+    if let Some(monitor) = monitor {
+        std::mem::forget(monitor);
+    }
+}
 
 const MAX_FILES: usize = 20_000;
 const MAX_FOLDER_DEPTH: usize = 8;
@@ -46,6 +87,7 @@ struct RenameRules {
     counter_padding: usize,
     date_source: String,
     date_format: String,
+    custom_date: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -254,8 +296,13 @@ fn validate_rules(rules: &RenameRules) -> Result<Option<Regex>, String> {
         }
     }
 
-    if !matches!(rules.date_source.as_str(), "today" | "modified") {
+    if !matches!(rules.date_source.as_str(), "today" | "modified" | "custom") {
         return Err("Choose a supported date source.".to_string());
+    }
+    if rules.date_source == "custom"
+        && NaiveDate::parse_from_str(&rules.custom_date, "%Y-%m-%d").is_err()
+    {
+        return Err("Choose a valid custom date.".to_string());
     }
     if !matches!(
         rules.date_format.as_str(),
@@ -356,19 +403,23 @@ fn planned_name(
     let transformed = apply_case(&replaced, &rules.case_style)?;
     let counter = rules.counter_start.saturating_add(index as u64);
     let counter = format!("{counter:0width$}", width = rules.counter_padding);
-    let date_time: DateTime<Local> = if rules.date_source == "modified" {
+    let date_value = if rules.date_source == "custom" {
+        NaiveDate::parse_from_str(&rules.custom_date, "%Y-%m-%d")
+            .map_err(|_| "Choose a valid custom date.".to_string())?
+    } else if rules.date_source == "modified" {
         fs::metadata(path)
             .ok()
             .and_then(|metadata| metadata.modified().ok())
             .map(DateTime::<Local>::from)
             .unwrap_or_else(Local::now)
+            .date_naive()
     } else {
-        Local::now()
+        Local::now().date_naive()
     };
     let date = match rules.date_format.as_str() {
-        "mm-dd-yyyy" => date_time.format("%m-%d-%Y").to_string(),
-        "dd-mm-yyyy" => date_time.format("%d-%m-%Y").to_string(),
-        _ => date_time.format("%Y-%m-%d").to_string(),
+        "mm-dd-yyyy" => date_value.format("%m-%d-%Y").to_string(),
+        "dd-mm-yyyy" => date_value.format("%d-%m-%Y").to_string(),
+        _ => date_value.format("%Y-%m-%d").to_string(),
     };
     let token = Regex::new(r"\{(name|n|ext|date)\}").expect("static pattern regex is valid");
     let mut output = token
@@ -609,6 +660,11 @@ async fn save_as(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|_app| {
+            #[cfg(target_os = "macos")]
+            install_open_panel_select_all();
+            Ok(())
+        })
         .menu(|app| {
             let rollcall_menu = SubmenuBuilder::new(app, "Rollcall")
                 .about_with_text("About Rollcall", None)
@@ -659,7 +715,17 @@ mod tests {
             counter_padding: 3,
             date_source: "today".to_string(),
             date_format: "yyyy-mm-dd".to_string(),
+            custom_date: String::new(),
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn command_a_detection_is_exact() {
+        assert!(is_command_a(0, 1 << 20));
+        assert!(is_command_a(0, (1 << 20) | (1 << 17)));
+        assert!(!is_command_a(1, 1 << 20));
+        assert!(!is_command_a(0, 0));
     }
 
     #[test]
@@ -695,6 +761,31 @@ mod tests {
             .unwrap()
             .is_match(&preview.items[0].proposed_name));
         let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn preview_adds_a_custom_date() {
+        let base = test_directory("custom-date");
+        let source = base.join("report.pdf");
+        fs::write(&source, b"report").unwrap();
+        let mut rules = default_rules();
+        rules.template = "{name}-{date}".to_string();
+        rules.date_source = "custom".to_string();
+        rules.custom_date = "2026-12-31".to_string();
+        rules.date_format = "dd-mm-yyyy".to_string();
+        let preview = preview_save_as_impl(vec![path_string(&source)], &rules).unwrap();
+        assert_eq!(preview.items[0].proposed_name, "report-31-12-2026.pdf");
+        let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn invalid_custom_date_is_rejected() {
+        let mut rules = default_rules();
+        rules.date_source = "custom".to_string();
+        rules.custom_date = "2026-02-30".to_string();
+        assert!(validate_rules(&rules)
+            .unwrap_err()
+            .contains("valid custom date"));
     }
 
     #[test]
@@ -758,6 +849,7 @@ mod tests {
             counter_padding: 2,
             date_source: "today".to_string(),
             date_format: "yyyy-mm-dd".to_string(),
+            custom_date: String::new(),
         };
         let preview = preview_save_as_impl(vec![path_string(&source)], &rules).unwrap();
         assert_eq!(preview.items[0].proposed_name, "archive-INVOICE.pdf");

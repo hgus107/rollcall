@@ -15,6 +15,7 @@ const inputs: RuleInputs = {
   datePosition: "beginning",
   dateSource: "today",
   dateFormat: "yyyy-mm-dd",
+  customDate: "",
 };
 
 test("positive: each dropdown function creates only its own rule", () => {
@@ -30,6 +31,18 @@ test("negative: unsupported dropdown values are rejected", () => {
   assert.throws(() => buildRenameRules("delete-files", inputs), /Supported Rename Function/u);
   assert.throws(() => buildRenameRules("add-numbers", { ...inputs, numberPosition: "" }), /Number Position/u);
   assert.throws(() => buildRenameRules("add-date", { ...inputs, dateFormat: "" }), /Date Format/u);
+  assert.throws(() => buildRenameRules("add-date", { ...inputs, dateSource: "" }), /Date Source/u);
+  assert.throws(() => buildRenameRules("add-date", { ...inputs, dateSource: "custom", customDate: "" }), /Custom Date/u);
+  assert.throws(() => buildRenameRules("add-date", { ...inputs, dateSource: "custom", customDate: "2026-02-30" }), /Custom Date/u);
+});
+
+test("positive: Custom Date is kept only for the Add Date custom source", () => {
+  const custom = buildRenameRules("add-date", { ...inputs, dateSource: "custom", customDate: "2026-12-31" });
+  assert.equal(custom.customDate, "2026-12-31");
+  assert.equal(custom.dateSource, "custom");
+
+  const today = buildRenameRules("add-date", { ...inputs, dateSource: "today", customDate: "2026-12-31" });
+  assert.equal(today.customDate, "");
 });
 
 test("boundary: counter values are integers and remain inside supported limits", () => {

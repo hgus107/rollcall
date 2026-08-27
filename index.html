@@ -153,15 +153,22 @@
                 </label>
                 <label class="field compact">
                   <span>Date Source</span>
-                  <select id="date-source">
-                    <option value="modified" selected>Date Modified</option>
+                  <select id="date-source" required>
+                    <option value="" selected disabled>Which Date</option>
+                    <option value="modified">Date Modified</option>
                     <option value="today">Today</option>
+                    <option value="custom">Custom Date</option>
                   </select>
+                </label>
+                <label id="custom-date-field" class="field compact" hidden>
+                  <span>Custom Date</span>
+                  <input id="custom-date" type="date" />
                 </label>
                 <label class="field compact">
                   <span>Date Format</span>
-                  <select id="date-format">
-                    <option value="yyyy-mm-dd" selected>YYYY-MM-DD</option>
+                  <select id="date-format" required>
+                    <option value="" selected disabled>Choose A Format</option>
+                    <option value="yyyy-mm-dd">YYYY-MM-DD</option>
                     <option value="mm-dd-yyyy">MM-DD-YYYY</option>
                     <option value="dd-mm-yyyy">DD-MM-YYYY</option>
                   </select>

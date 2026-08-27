@@ -4,13 +4,13 @@ New names first. Original files stay untouched.
 
 Website: [https://hgus107.github.io/Filish/?app=rollcall](https://hgus107.github.io/Filish/?app=rollcall)
 
-Current release: **v0.1.0**
+Current release: **v0.1.1**
 
 ## Why this exists
 
 Renaming a few files is easy. Renaming hundreds consistently is where Finder becomes slow, error-prone, and difficult to review.
 
-Rollcall turns that job into a visible queue. Add files or a folder, choose one clear rename function, and inspect every proposed name before saving anything. Processing stays on the Mac and the selected originals are never modified.
+Rollcall turns that job into a visible queue. Rename all your files in one go with five different naming patterns. It is fast, interactive, private, safe, and free. Processing stays on the Mac and the selected originals are never modified.
 
 ## What it does
 
@@ -18,7 +18,7 @@ Rollcall turns that job into a visible queue. Add files or a folder, choose one 
 - Finds and replaces text, including removal when Replace With is empty
 - Changes filename text to lowercase, uppercase, or title case
 - Adds sequential numbers at the beginning or end with `1`, `01`, or `001` formatting
-- Adds the current or file-modified date at the beginning or end in three formats
+- Adds today's date, the file-modified date, or a custom date at the beginning or end in three formats
 - Shows Original Name, New Name, and Status before Save As is enabled
 - Sorts by Original Name or New Name in either direction
 - Supports mouse, Shift, Command, arrow-key, and Delete-key queue selection
