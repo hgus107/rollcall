@@ -76,4 +76,4 @@ ROLLCALL_NOTARY_PROFILE="RollcallNotary" \
 npm run package:mac
 ```
 
-Notarization submission: `991a8c1b-27f1-412d-b8c2-b95cac0d6bfd` (Accepted, August 27, 2026).
+Latest notarization submission: `45cecb36-78c3-49f7-94ca-5065db40a074` (Accepted, August 27, 2026).
