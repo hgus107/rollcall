@@ -66,12 +66,14 @@ Audit date: 2026-08-27
 
 ## Distribution Status
 
-The generated DMG is ad-hoc signed and suitable for local testing. The build host currently exposes no valid `Developer ID Application` identity or private key, so Apple notarization cannot be completed from the available credentials. Team ID `V7SF7XDP3N` identifies the developer team but is not a signing certificate.
+The public macOS release is signed with `Developer ID Application: Harish Gupta (V7SF7XDP3N)`, uses hardened runtime and a secure timestamp, and was accepted by Apple's notarization service. The notarization ticket is stapled to the DMG. Independent `codesign`, `spctl`, `stapler`, and `hdiutil` checks pass; Gatekeeper reports both the app and DMG as `Notarized Developer ID`.
 
-For a public Gatekeeper-clean package, install the Developer ID Application certificate with its private key, store a `notarytool` keychain profile, then run:
+The reproducible signed-release command is:
 
 ```sh
-ROLLCALL_SIGNING_IDENTITY="Developer ID Application: … (V7SF7XDP3N)" \
-ROLLCALL_NOTARY_PROFILE="profile-name" \
+ROLLCALL_SIGNING_IDENTITY="Developer ID Application: Harish Gupta (V7SF7XDP3N)" \
+ROLLCALL_NOTARY_PROFILE="RollcallNotary" \
 npm run package:mac
 ```
+
+Notarization submission: `991a8c1b-27f1-412d-b8c2-b95cac0d6bfd` (Accepted, August 27, 2026).
