@@ -1,69 +1,83 @@
 # Rollcall
 
-Rename 400 files at once. See every name before it happens.
+New names first. Original files stay untouched.
+
+Website: [https://hgus107.github.io/kiln/?app=rollcall](https://hgus107.github.io/kiln/?app=rollcall)
+
+Current release: **v0.1.0**
 
 ## Why this exists
 
-Anyone who shoots photos, records video, or scans paper ends up with a folder full of `IMG_4471.JPG` and no way to tell one from another. Renaming them by hand is an evening. Renaming them with a script is a different evening, plus the risk that you typed the regex wrong and now four hundred files are named `undefined-1`.
+Renaming a few files is easy. Renaming hundreds consistently is where Finder becomes slow, error-prone, and difficult to review.
 
-The existing tools are Windows-only, or from 2009, or paid, or all three. Most of them rename first and let you find out afterwards.
-
-Rollcall shows you the finished names before it touches anything, and keeps an undo log so a bad batch is one click away from being un-done.
+Rollcall turns that job into a visible queue. Add files or a folder, choose one clear rename function, and inspect every proposed name before saving anything. Processing stays on the Mac and the selected originals are never modified.
 
 ## What it does
 
-- Build a name from parts: original name, regex capture, EXIF shot date, camera model, sequence counter, fixed text
-- Live before/after table — every name updates as you type the rule
-- Collision detection, flagged before the rename runs, not after
-- Case changes, find and replace, prefix and suffix, extension changes
-- Undo log per batch — one click reverts the whole run
-- Handles the awkward cases: case-insensitive filesystems, Windows reserved names, files locked mid-batch
+- Adds text at the beginning, at the end, or both
+- Finds and replaces text, including removal when Replace With is empty
+- Changes filename text to lowercase, uppercase, or title case
+- Adds sequential numbers at the beginning or end with `1`, `01`, or `001` formatting
+- Adds the current or file-modified date at the beginning or end in three formats
+- Shows Original Name, New Name, and Status before Save As is enabled
+- Sorts by Original Name or New Name in either direction
+- Supports mouse, Shift, Command, arrow-key, and Delete-key queue selection
+- Imports individual files or folders while rejecting duplicate selections
+- Collects up to 20,000 visible files per selection, skips hidden items, and limits recursive folder depth to eight levels
+- Writes renamed copies to a chosen or typed destination folder; originals remain untouched
+- Rejects duplicate, occupied, invalid, cross-platform-incompatible, and over-255-byte filenames
+
+Advanced pattern matching is available inside Replace Text, but ordinary use does not require regular expressions.
 
 ## What it avoids
 
-| Doing it by hand or by script | Rollcall |
+| Manual or web renaming | Rollcall |
 |---|---|
-| You find out the rule was wrong after the rename | You read every resulting name first |
-| Two files collapse onto one name and one is lost | Collisions are caught and shown before anything runs |
-| No way back | Every batch writes an undo log |
-| Dates come from the file, which is wrong after a copy | Dates come from EXIF, which is when the shutter fired |
-| Subscription, or Windows-only, or abandoned | Free, offline, cross-platform |
+| Rename files one at a time | Preview a complete batch |
+| Discover collisions halfway through | Block conflicts before saving |
+| Upload filenames or files to a service | All processing stays local |
+| Risk changing the originals | Save renamed copies to another folder |
+| Learn patterns for basic tasks | Pick a plain-language function |
+| Guess which files changed | Read Original Name, New Name, and Status together |
 
 ## How to use
 
-> Pre-release. There is no installer to download yet. This is the intended flow.
+Download the Apple Silicon installer from the [latest release](https://github.com/hgus107/rollcall/releases/latest).
 
-1. Drag a folder or a selection of files onto the window.
-2. Add rule steps — a regex capture, a date from EXIF, a counter — and stack them in order.
-3. Read the before/after table. Anything that would collide is marked in red.
-4. Press Rename. If it went wrong, press Undo.
+1. Add individual files or choose a folder.
+2. Choose Add Text, Replace Text, Change Case, Add Numbers, or Add Date.
+3. Review every populated New Name and resolve any Status warning.
+4. Select Save As, then choose or type an absolute destination folder path.
+5. Confirm Yes. Rollcall writes renamed copies and leaves every original unchanged.
 
-Nothing is written until you press Rename, and nothing is deleted, ever.
+The localhost browser preview is intentionally read-only. File and folder actions are available in the Rollcall desktop app, which avoids browser upload/edit permission warnings.
 
 ## Tech stack
 
 **Shell**
-- [Tauri v2](https://tauri.app) — desktop shell, IPC bridge, installer bundler. The OS webview means a small binary and no Electron.
-- Frontend is Vite + TypeScript, no framework. The preview table is the whole interface, and it is fast because the names are computed in Rust, not in JavaScript.
+
+- [Tauri v2](https://tauri.app) — native macOS window, system file pickers, IPC bridge, and installer bundling
+- Vite plus TypeScript — framework-free interface and typed presentation logic
+- Inter — bundled locally so the interface does not contact a font service
 
 **Backend**
-- [Rust](https://www.rust-lang.org) — rule evaluation, EXIF reads, and the rename itself.
-- [`regex`](https://docs.rs/regex) — capture groups for the pattern steps. Rust's regex engine has no backtracking, so a pasted pattern cannot hang the preview no matter how badly it is written.
-- [`kamadak-exif`](https://docs.rs/kamadak-exif) — reads shot date, camera make and model, lens, and orientation straight out of the file.
-- [`walkdir`](https://docs.rs/walkdir) — directory traversal when a folder is dropped instead of a selection.
-- [`unicode-normalization`](https://docs.rs/unicode-normalization) — macOS stores filenames decomposed (NFD) and Linux does not, which is why a file called `café` compares unequal to itself across platforms unless you normalize.
-- `serde` / `serde_json` — the undo log is a plain JSON file recording every old-path-to-new-path pair in the batch, written before the first rename, so an interrupted run is still fully reversible.
 
-**How a rename actually runs**
+- [Rust](https://www.rust-lang.org) — folder collection, validation, previews, and file copying
+- `regex` — optional advanced Find patterns
+- `chrono` — Today and Date Modified formatting
+- `unicode-normalization` — case-insensitive, Unicode-normalized collision checks
+- `walkdir` — bounded recursive folder collection
+- `serde` — typed messages across the Rust/TypeScript boundary
 
-The rule is a list of steps, evaluated in order per file, entirely in Rust. Every keystroke re-evaluates the whole set and returns the finished names to the table — which is why the preview is honest rather than approximate: it is the same code that will do the rename.
+**How Save As runs**
 
-Renaming happens in two passes. The first pass moves every file to a unique temporary name, the second moves each to its final name. This is what makes swaps and rotations possible — renaming `a` to `b` and `b` to `a` in a single pass would destroy one of them. Collisions, reserved names (`CON`, `PRN`, `NUL` on Windows), and permission failures are detected before the first pass begins.
+The frontend sends selected paths and one rename rule to Rust. Rust validates the rule and every proposed filename, detects duplicate output names, verifies the destination, and checks existing names without overwriting them. It then creates each output exclusively, copies bytes and source permissions, syncs the result, and removes any partial outputs if the batch fails. The original paths are never renamed or deleted.
 
 **Distribution**
-- `tauri build` produces a signed `.dmg`, `.msi`, and `.AppImage`.
-- macOS builds are notarized.
-- Homebrew tap for `brew install --cask rollcall`.
+
+- `npm run package:mac` builds and verifies `Rollcall.app` plus an Apple Silicon `.dmg`.
+- Local packages use ad-hoc signing. A public release requires `ROLLCALL_SIGNING_IDENTITY` plus `ROLLCALL_NOTARY_PROFILE`; the script then enables hardened runtime signing, notarizes the DMG, and staples the ticket.
+- The current minimum is macOS 12 on Apple Silicon. Intel, Windows, and Linux packages are not currently built or verified by this repository.
 
 ## License
 
