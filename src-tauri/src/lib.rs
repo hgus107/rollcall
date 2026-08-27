@@ -81,7 +81,6 @@ struct RenameRules {
     template: String,
     find: String,
     replace: String,
-    use_regex: bool,
     case_style: String,
     counter_start: u64,
     counter_padding: usize,
@@ -280,7 +279,7 @@ fn apply_case(value: &str, case_style: &str) -> Result<String, String> {
     }
 }
 
-fn validate_rules(rules: &RenameRules) -> Result<Option<Regex>, String> {
+fn validate_rules(rules: &RenameRules) -> Result<(), String> {
     if rules.template.trim().is_empty() {
         return Err("Name pattern cannot be empty.".to_string());
     }
@@ -311,13 +310,7 @@ fn validate_rules(rules: &RenameRules) -> Result<Option<Regex>, String> {
         return Err("Choose a supported date format.".to_string());
     }
 
-    if rules.use_regex && !rules.find.is_empty() {
-        Regex::new(&rules.find)
-            .map(Some)
-            .map_err(|error| format!("Regex error: {error}"))
-    } else {
-        Ok(None)
-    }
+    Ok(())
 }
 
 fn validate_filename(name: &str) -> Result<(), String> {
@@ -376,12 +369,7 @@ fn validate_filename(name: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn planned_name(
-    path: &Path,
-    index: usize,
-    rules: &RenameRules,
-    find_regex: Option<&Regex>,
-) -> Result<String, String> {
+fn planned_name(path: &Path, index: usize, rules: &RenameRules) -> Result<String, String> {
     let original_stem = path
         .file_stem()
         .map(|stem| stem.to_string_lossy().into_owned())
@@ -393,10 +381,6 @@ fn planned_name(
 
     let replaced = if rules.find.is_empty() {
         original_stem
-    } else if let Some(regex) = find_regex {
-        regex
-            .replace_all(&original_stem, rules.replace.as_str())
-            .into_owned()
     } else {
         original_stem.replace(&rules.find, &rules.replace)
     };
@@ -442,7 +426,7 @@ fn planned_name(
 }
 
 fn preview_save_as_impl(paths: Vec<String>, rules: &RenameRules) -> Result<RenamePreview, String> {
-    let find_regex = validate_rules(rules)?;
+    validate_rules(rules)?;
     let mut items = Vec::with_capacity(paths.len());
 
     for (index, source) in paths.iter().enumerate() {
@@ -451,15 +435,13 @@ fn preview_save_as_impl(paths: Vec<String>, rules: &RenameRules) -> Result<Renam
             .file_name()
             .map(|name| name.to_string_lossy().into_owned())
             .unwrap_or_default();
-        let proposed_name = planned_name(&source_path, index, rules, find_regex.as_ref())?;
+        let proposed_name = planned_name(&source_path, index, rules)?;
         let original_stem = source_path
             .file_stem()
             .map(|stem| stem.to_string_lossy().into_owned())
             .unwrap_or_default();
         let matched = if rules.find.is_empty() {
             true
-        } else if let Some(regex) = find_regex.as_ref() {
-            regex.is_match(&original_stem)
         } else {
             original_stem.contains(&rules.find)
         };
@@ -573,7 +555,7 @@ fn save_as_impl(
         .canonicalize()
         .map_err(|error| format!("Could Not Open The Destination Folder: {error}"))?;
 
-    let find_regex = validate_rules(&rules)?;
+    validate_rules(&rules)?;
     let mut planned: Vec<(PathBuf, PathBuf)> = Vec::new();
     let mut output_names = HashSet::new();
     let existing_output_names: HashSet<String> = fs::read_dir(&destination)
@@ -587,7 +569,7 @@ fn save_as_impl(
         if !source.is_file() {
             return Err(format!("Source File Is Missing: {}", path_string(&source)));
         }
-        let proposed_name = planned_name(&source, index, &rules, find_regex.as_ref())?;
+        let proposed_name = planned_name(&source, index, &rules)?;
         validate_filename(&proposed_name)?;
         let original_name = source
             .file_name()
@@ -709,7 +691,6 @@ mod tests {
             template: "{name}-{n}".to_string(),
             find: String::new(),
             replace: String::new(),
-            use_regex: false,
             case_style: "keep".to_string(),
             counter_start: 1,
             counter_padding: 3,
@@ -835,15 +816,14 @@ mod tests {
     }
 
     #[test]
-    fn regex_capture_and_case_share_the_preview_path() {
-        let base = test_directory("regex");
+    fn literal_replace_and_case_share_the_preview_path() {
+        let base = test_directory("literal-replace");
         let source = base.join("scan_2026_invoice.pdf");
         fs::write(&source, b"fixture").unwrap();
         let rules = RenameRules {
             template: "archive-{name}".to_string(),
-            find: r"scan_\d+_(.*)".to_string(),
-            replace: "$1".to_string(),
-            use_regex: true,
+            find: "scan_2026_".to_string(),
+            replace: String::new(),
             case_style: "upper".to_string(),
             counter_start: 1,
             counter_padding: 2,
@@ -853,6 +833,13 @@ mod tests {
         };
         let preview = preview_save_as_impl(vec![path_string(&source)], &rules).unwrap();
         assert_eq!(preview.items[0].proposed_name, "archive-INVOICE.pdf");
+
+        let mut special_characters = rules.clone();
+        special_characters.find = "[".to_string();
+        special_characters.replace = "plain".to_string();
+        let preview = preview_save_as_impl(vec![path_string(&source)], &special_characters).unwrap();
+        assert!(!preview.items[0].matched);
+        assert_eq!(preview.items[0].status, "ready");
         let _ = fs::remove_dir_all(base);
     }
 
@@ -1003,10 +990,6 @@ mod tests {
         assert!(preview_save_as_impl(vec![path_string(&source)], &rules).is_err());
         rules.counter_padding = 3;
         rules.template = "{unknown}-{name}".to_string();
-        assert!(preview_save_as_impl(vec![path_string(&source)], &rules).is_err());
-        rules.template = "{name}".to_string();
-        rules.use_regex = true;
-        rules.find = "[".to_string();
         assert!(preview_save_as_impl(vec![path_string(&source)], &rules).is_err());
         assert_eq!(fs::read_dir(&destination).unwrap().count(), 0);
         let _ = fs::remove_dir_all(base);

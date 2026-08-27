@@ -7,7 +7,6 @@ const inputs: RuleInputs = {
   suffix: "-Final",
   find: "IMG",
   replace: "Photo",
-  useRegex: false,
   caseStyle: "upper",
   counterStart: 1,
   counterPadding: 3,

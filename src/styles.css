@@ -288,37 +288,6 @@ select:focus-visible {
   min-width: 0;
 }
 
-.advanced-options {
-  margin-top: 6px;
-  padding-top: 9px;
-  border-top: 1px solid var(--soft-line);
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.advanced-options summary {
-  width: fit-content;
-  cursor: pointer;
-  font-weight: 720;
-  user-select: none;
-}
-
-.advanced-options[open] summary {
-  margin-bottom: 10px;
-}
-
-.checkbox-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #5c5d58;
-  cursor: pointer;
-}
-
-.checkbox-option input {
-  accent-color: var(--accent);
-}
-
 .toggle {
   position: relative;
   display: inline-flex;
@@ -580,14 +549,7 @@ select:focus-visible {
 }
 
 #replace-text-settings {
-  grid-template-columns: repeat(2, minmax(150px, 1fr)) minmax(125px, auto);
-}
-
-.function-panel .advanced-options {
-  align-self: center;
-  margin: 18px 0 0;
-  padding: 0;
-  border: 0;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
 }
 
 .table-wrap {
@@ -986,10 +948,6 @@ tbody tr[data-path] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  #replace-text-settings .advanced-options {
-    grid-column: 1 / -1;
-    margin-top: 0;
-  }
 }
 
 @media (max-width: 760px) {

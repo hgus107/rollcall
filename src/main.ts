@@ -52,7 +52,6 @@ const prefixInput = element<HTMLInputElement>("prefix");
 const suffixInput = element<HTMLInputElement>("suffix");
 const findInput = element<HTMLInputElement>("find");
 const replaceInput = element<HTMLInputElement>("replace");
-const useRegexInput = element<HTMLInputElement>("use-regex");
 const caseStyleInput = element<HTMLSelectElement>("case-style");
 const counterStartInput = element<HTMLInputElement>("counter-start");
 const counterPaddingInput = element<HTMLSelectElement>("counter-padding");
@@ -100,7 +99,6 @@ const ruleControls: Array<HTMLInputElement | HTMLSelectElement> = [
   suffixInput,
   findInput,
   replaceInput,
-  useRegexInput,
   caseStyleInput,
   counterStartInput,
   counterPaddingInput,
@@ -140,7 +138,6 @@ function currentRules(): RenameRules {
     suffix: suffixInput.value,
     find: findInput.value,
     replace: replaceInput.value,
-    useRegex: useRegexInput.checked,
     caseStyle: caseStyleInput.value,
     counterStart: Number.isFinite(start) ? Math.max(0, Math.min(start, 999_999)) : 1,
     counterPadding: Number.isFinite(padding) ? Math.max(1, Math.min(padding, 3)) : 3,

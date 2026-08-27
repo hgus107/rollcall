@@ -1,4 +1,4 @@
-# Rollcall 0.1.1 Release Audit
+# Rollcall 0.1.2 Release Audit
 
 Audit date: 2026-08-27
 
@@ -14,7 +14,7 @@ Audit date: 2026-08-27
 ## Automated Results
 
 - Frontend unit tests: 17 passed, 0 failed
-- Rust unit and integration-style tests: 17 passed, 0 failed
+- Rust unit and integration-style tests: 20 passed, 0 failed
 - TypeScript and Vite production build: passed
 - Rust release build: passed
 - npm dependency audit: 0 known vulnerabilities
@@ -31,7 +31,7 @@ Audit date: 2026-08-27
 | Choose Files | Adds multiple files | Duplicate files show a clear notice | Empty picker return is harmless | Passed |
 | Choose Folder | Recursively adds visible files | Re-importing the same folder is blocked | Hidden items, depth 8, and 20,000-file limits are reported | Passed |
 | Add Text | Beginning and end text preview correctly | Both fields empty keeps New Name blank | Extensions remain unchanged | Passed |
-| Replace Text | Matching names alone receive previews | Empty Find keeps the function incomplete | Empty Replace With removes found text; invalid Regex is reported | Passed |
+| Replace Text | Matching names alone receive previews | Empty Find keeps the function incomplete | Empty Replace With removes found text; Find is always treated as literal text | Passed |
 | Change Case | Lowercase, uppercase, and title case work | No case keeps New Name blank | Switching functions clears stale previews immediately | Passed |
 | Add Numbers | Beginning and end positions work | No position keeps New Name blank | Start clamps to 0–999,999; digits clamp to 1–3 | Passed |
 | Add Date | Today and Date Modified work | No position keeps New Name blank | All three date formats and both positions work | Passed |
@@ -63,6 +63,7 @@ Audit date: 2026-08-27
 13. Replaced the outdated README with the tested Rollcall behavior and Kiln-style repository flow.
 14. Added the Rollcall tab and deep link to the existing Kiln GitHub Pages website.
 15. Reduced the macOS menu bar to Rollcall → About Rollcall / Quit Rollcall and View → Toggle Full Screen, matching Kiln exactly.
+16. Removed Advanced Pattern Matching from the interface and both preview engines while preserving literal Find/Replace behavior.
 
 ## Distribution Status
 
@@ -76,4 +77,4 @@ ROLLCALL_NOTARY_PROFILE="RollcallNotary" \
 npm run package:mac
 ```
 
-Latest notarization submission: `433b48be-00d4-4159-a63f-5983e2b6858f` (Accepted, August 27, 2026).
+Latest notarization submission: `ac0331f7-8673-4840-8f78-e3fa23b54b01` (Accepted, August 27, 2026).

@@ -8,7 +8,6 @@ const baseInputs = {
   suffix: "",
   find: "IMG_",
   replace: "Photo-",
-  useRegex: false,
   caseStyle: "title",
   counterStart: 1,
   counterPadding: 3,
@@ -69,6 +68,13 @@ test("positive: Replace Text identifies only filenames that contain the Find val
   assert.equal(preview.items[0].proposedName, "xyz-report.txt");
   assert.equal(preview.items[1].matched, false);
   assert.equal(preview.items[1].status, "unchanged");
+
+  const specialCharacters = previewBrowserRename(
+    [{ path: "notes.txt", name: "notes.txt" }],
+    buildRenameRules("replace-text", { ...baseInputs, find: "[", replace: "plain" }),
+  );
+  assert.equal(specialCharacters.items[0].matched, false);
+  assert.equal(specialCharacters.items[0].status, "unchanged");
 });
 
 test("boundary: filenames at 255 bytes pass and 256 bytes fail", () => {
@@ -86,15 +92,15 @@ test("boundary: filenames at 255 bytes pass and 256 bytes fail", () => {
   assert.equal(tooLong.invalid, 1);
 });
 
-test("edge: regex captures, case changes, numbering, and invalid regex are handled", () => {
-  const regex = previewBrowserRename(
+test("edge: literal replacement, case changes, numbering, and dates are handled", () => {
+  const replaced = previewBrowserRename(
     [{ path: "scan_2026_invoice.pdf", name: "scan_2026_invoice.pdf" }],
     {
-      ...buildRenameRules("replace-text", { ...baseInputs, find: "scan_\\d+_(.*)", replace: "$1", useRegex: true }),
+      ...buildRenameRules("replace-text", { ...baseInputs, find: "scan_2026_", replace: "" }),
       caseStyle: "upper",
     },
   );
-  assert.equal(regex.items[0].proposedName, "INVOICE.pdf");
+  assert.equal(replaced.items[0].proposedName, "INVOICE.pdf");
 
   const numbered = previewBrowserRename(
     [{ path: "image.png", name: "image.png" }],
@@ -119,13 +125,4 @@ test("edge: regex captures, case changes, numbering, and invalid regex are handl
     }),
   );
   assert.equal(customDated.items[0].proposedName, "31-12-2026-image.png");
-
-  assert.throws(
-    () =>
-      previewBrowserRename(
-        [{ path: "image.png", name: "image.png" }],
-        buildRenameRules("replace-text", { ...baseInputs, find: "[", useRegex: true }),
-      ),
-    /Regex Error/u,
-  );
 });

@@ -4,7 +4,7 @@ New names first. Original files stay untouched.
 
 Website: [https://hgus107.github.io/Filish/?app=rollcall](https://hgus107.github.io/Filish/?app=rollcall)
 
-Current release: **v0.1.1**
+Current release: **v0.1.2**
 
 ## Why this exists
 
@@ -26,8 +26,6 @@ Rollcall turns that job into a visible queue. Rename all your files in one go wi
 - Collects up to 20,000 visible files per selection, skips hidden items, and limits recursive folder depth to eight levels
 - Writes renamed copies to a chosen or typed destination folder; originals remain untouched
 - Rejects duplicate, occupied, invalid, cross-platform-incompatible, and over-255-byte filenames
-
-Advanced pattern matching is available inside Replace Text, but ordinary use does not require regular expressions.
 
 ## What it avoids
 
@@ -63,7 +61,7 @@ The localhost browser preview is intentionally read-only. File and folder action
 **Backend**
 
 - [Rust](https://www.rust-lang.org) — folder collection, validation, previews, and file copying
-- `regex` — optional advanced Find patterns
+- `regex` — internal validation of supported filename tokens
 - `chrono` — Today and Date Modified formatting
 - `unicode-normalization` — case-insensitive, Unicode-normalized collision checks
 - `walkdir` — bounded recursive folder collection

@@ -4,7 +4,6 @@ export type RenameRules = {
   template: string;
   find: string;
   replace: string;
-  useRegex: boolean;
   caseStyle: string;
   counterStart: number;
   counterPadding: number;
@@ -18,7 +17,6 @@ export type RuleInputs = {
   suffix: string;
   find: string;
   replace: string;
-  useRegex: boolean;
   caseStyle: string;
   counterStart: number;
   counterPadding: number;
@@ -54,7 +52,6 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         template: `${inputs.prefix}{name}${inputs.suffix}`,
         find: "",
         replace: "",
-        useRegex: false,
         caseStyle: "keep",
         counterStart,
         counterPadding,
@@ -67,7 +64,6 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         template: "{name}",
         find: inputs.find,
         replace: inputs.replace,
-        useRegex: inputs.useRegex,
         caseStyle: "keep",
         counterStart,
         counterPadding,
@@ -80,7 +76,6 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         template: "{name}",
         find: "",
         replace: "",
-        useRegex: false,
         caseStyle: inputs.caseStyle,
         counterStart,
         counterPadding,
@@ -94,7 +89,6 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         template: inputs.numberPosition === "beginning" ? "{n}-{name}" : "{name}-{n}",
         find: "",
         replace: "",
-        useRegex: false,
         caseStyle: "keep",
         counterStart,
         counterPadding,
@@ -115,7 +109,6 @@ export function buildRenameRules(selectedFunction: string, inputs: RuleInputs): 
         template: inputs.datePosition === "beginning" ? "{date}-{name}" : "{name}-{date}",
         find: "",
         replace: "",
-        useRegex: false,
         caseStyle: "keep",
         counterStart,
         counterPadding,

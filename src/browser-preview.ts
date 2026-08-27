@@ -77,29 +77,14 @@ function formattedDate(file: BrowserFileEntry, rules: RenameRules): string {
 function matchesFind(file: BrowserFileEntry, rules: RenameRules): boolean {
   if (rules.find === "") return true;
   const { stem } = splitName(file.name);
-  if (!rules.useRegex) return stem.includes(rules.find);
-  try {
-    return new RegExp(rules.find, "u").test(stem);
-  } catch {
-    return false;
-  }
+  return stem.includes(rules.find);
 }
 
 function nameFor(file: BrowserFileEntry, index: number, rules: RenameRules): string {
   const { stem, extension } = splitName(file.name);
   let changedStem = stem;
   if (rules.find !== "") {
-    if (rules.useRegex) {
-      let pattern: RegExp;
-      try {
-        pattern = new RegExp(rules.find, "gu");
-      } catch (error) {
-        throw new Error(`Regex Error: ${error instanceof Error ? error.message : "Invalid Pattern"}`);
-      }
-      changedStem = changedStem.replace(pattern, rules.replace);
-    } else {
-      changedStem = changedStem.split(rules.find).join(rules.replace);
-    }
+    changedStem = changedStem.split(rules.find).join(rules.replace);
   }
   changedStem = applyCase(changedStem, rules.caseStyle);
   const count = String(Math.min(Number.MAX_SAFE_INTEGER, rules.counterStart + index)).padStart(rules.counterPadding, "0");
